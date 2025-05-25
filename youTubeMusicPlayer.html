@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <div class="now-playing" id="now-playing">Selecione uma música</div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+            <div class="time-info">
+                <span id="current-time">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="prev-btn" disabled>⏮</button>
+            <button id="play-btn" disabled>▶</button>
+            <button id="pause-btn" disabled>⏸</button>
+            <button id="next-btn" disabled>⏭</button>
+        </div>
+
+        <div class="volume-control">
+            <span>🔈</span>
+            <input type="range" id="volume" min="0" max="100">
+            <span>🔊</span>
+        </div>
+
+        <ul class="playlist" id="playlist"></ul>
+    </div>
+    
+    <div id="player" style="display: none;"></div> *****************************************
+
+    <script>
+        let currentTrack = Math.floor(Math.random() * 3); // A primeira faixa a ser tocada é escolhida aleatoriamente
+        let isPlaying = false; // Verifica se o player está tocando
+        let progressInterval; // Progresso da música
+        let currentVolume = 50; // Valor do volume
+        let player; 
+
+        const playlist = [ // Array com a playlist
+            {
+                title: "Les Jours Tristes - Yann Tiersen",
+                url: "https://www.youtube.com/watch?v=AA4deEZjnBA"
+            },
+            {
+                title: "Sunrise, Sunset - Bright Eyes",
+                url: "https://www.youtube.com/watch?v=1aSXYNt8udc"
+            },
+            {
+                title: "Elastic Heart - Sia",
+                url: "https://www.youtube.com/watch?v=KWZGAExj-es"
+            }
+        ];
+        
+       // Carrega a API do YouTube IFrame Player
+        function loadYouTubePlayerAPI() {
+            const youTubeAPI = document.createElement('script'); // Cria o script
+            youTubeAPI.src = "https://www.youtube.com/iframe_api"; // Define a fonte
+            const firstScript = document.getElementsByTagName('script')[0]; 
+            firstScript.parentNode.insertBefore(youTubeAPI, firstScript); // Faz o script ser executado primeiro
+        }
+
+        // Quando API pronto
+        window.onYouTubeIframeAPIReady = function() {
+            player = new youTube.Player('player', { // Cria um novo player com o ID 'player'
+                height: '0',
+                width: '0', // Deixa o player invisível
+                playerVars: { // Parâmetros do player
+                    'autoplay': 0, // Sem autoplay
+                    'controls': 0, // Desabilita controles
+                    'disablekb': 1, // Desabilita controle pelo teclado
+                    'rel': 0 // Sem vídeos relacionados no final 
+                },              
+                events: {
+                    'onReady': onPlayerReady, // Player pronto
+                    'onStateChange': onPlayerStateChange // Mudança de estado
+                }
+            });
+        };
+
+        function onPlayerReady(event) { // Quando player pronto
+            updatePlaylist(); // Carrega a interface da playlist
+            enableControls(); // Habilita controles 
+
+            player.setVolume(currentVolume); // Define o volume inicial
+        };
+
+        // Atualiza a interface da playlist
+        function updatePlaylist() {
+            const playlistElement = document.getElementById('playlist'); // Obtém elemento HTML da playlist
+            playlistElement.innerHTML = ''; // Limpa conteuúdo
+            
+            playlist.forEach((track, index) => { // Para cada faixa da playlist
+                const li = document.createElement('li'); // Cria um novo elemento <li>
+                li.textContent = track.title; // Define o conteúdo de texto como título da faixa
+                if (index === currentTrack) { // Se for a faixa atual
+                    li.classList.add('active'); // Adiciona a classe 'active'
+                    document.getElementById('now-playing').textContent = track.title; // Atualiza o tocando agora
+                }
+                
+                li.addEventListener('click', () => { // Toca a faixa quando é clicada
+                    playTrack(index);
+                });
+                
+                playlistElement.appendChild(li); // Adiciona cada faixa na interface da playlist
+            });
+        }
+
+        // Habilita controles
+        function enableControls() {
+            document.getElementById('play-btn').disabled = false; // Habilita o play
+            // Habilita os de passar/voltar quando número de músicas > 1
+            document.getElementById('next-btn').disabled = playlist.length <= 1; 
+            document.getElementById('prev-btn').disabled = playlist.length <= 1;
+        }
+
+        const volumeControl = document.getElementById('volume'); // Obtém input de volume
+        volumeControl.addEventListener('input', function() {
+            currentVolume = this.value;
+            player.setVolume(currentVolume); // Redefine o volume para esse valor
+        });
+
+        // Quando o estado do player muda
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) { // Quando está tocando
+                isPlaying = true;
+                document.getElementById('play-btn').disabled = true; 
+                document.getElementById('pause-btn').disabled = false;
+                startProgressTimer();
+            } else if (event.data === YT.PlayerState.PAUSED) { // Quando está pausado
+                isPlaying = false;
+                document.getElementById('play-btn').disabled = false; // Quando a faixa termina
+                document.getElementById('pause-btn').disabled = true;
+                stopProgressTimer();
+            } else if (event.data === YT.PlayerState.ENDED) {
+                playNext(); // Toca a próxima faixa
+            }
+        }
+    </script>
+</body>
+</html>
