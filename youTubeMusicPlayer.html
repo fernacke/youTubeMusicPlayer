@@ -59,7 +59,7 @@
                 url: "https://www.youtube.com/watch?v=KWZGAExj-es"
             }
         ];
-        
+
        // Carrega a API do YouTube IFrame Player
         function loadYouTubePlayerAPI() {
             const youTubeAPI = document.createElement('script'); // Cria o script
@@ -116,10 +116,33 @@
 
         // Habilita controles
         function enableControls() {
-            document.getElementById('play-btn').disabled = false; // Habilita o play
-            // Habilita os de passar/voltar quando número de músicas > 1
-            document.getElementById('next-btn').disabled = playlist.length <= 1; 
-            document.getElementById('prev-btn').disabled = playlist.length <= 1;
+            document.getElementById('play-btn').disabled = false; 
+            document.getElementById('next-btn').disabled = false; 
+            document.getElementById('prev-btn').disabled = false;
+        }
+
+        // Configura os eventos dos botões
+        document.getElementById('play-btn').addEventListener('click', () => {
+            player.playVideo();
+        });
+        
+        document.getElementById('pause-btn').addEventListener('click', () => {
+            player.pauseVideo();
+        });
+        
+        document.getElementById('next-btn').addEventListener('click', playNext);
+        document.getElementById('prev-btn').addEventListener('click', playPrev);
+
+        // Toca a próxima faixa
+        function playNext() {
+            currentTrack = (currentTrack + 1) % playlist.length; // Se for a última vai para o início
+            playTrack(currentTrack);
+        }
+        
+        // Toca a faixa anterior
+        function playPrev() {
+            currentTrack = (currentTrack - 1 + playlist.length) % playlist.length; // Se for a primeira vai para o final
+            playTrack(currentTrack);
         }
 
         const volumeControl = document.getElementById('volume'); // Obtém input de volume
@@ -144,6 +167,62 @@
                 playNext(); // Toca a próxima faixa
             }
         }
+
+        // Toca uma faixa específica
+        function playTrack(index) {{
+                currentTrack = index;
+                const videoId = extractVideoId(playlist[index].url);
+                
+                if (videoId) {
+                    player.loadVideoById(videoId);
+                    isPlaying = true;
+                    document.getElementById('play-btn').disabled = true;
+                    document.getElementById('pause-btn').disabled = false;
+                    updatePlaylist();
+                }
+            }
+        }
+
+        // Extrai o ID do vídeo da URL do YouTube
+        function extractVideoId(url) {
+            const regexID = /^.*(watch\?v=)([^#&?]*).*/; // Cria uma expressão regular
+            const match = url.match(regexID); // Extrai o ID
+            return match[2];
+        }
+
+        // Inicia o timer de progresso
+        function startProgressTimer() {
+            stopProgressTimer();
+            progressInterval = setInterval(updateProgress, 1000);
+        }
+        
+        // Para o timer de progresso
+        function stopProgressTimer() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+        }
+
+          // Formata o tempo de segundos para MM:SS
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Atualiza a barra de progresso
+        function updateProgress() {
+            const currentTime = player.getCurrentTime(); // Tempo atual de reprodução
+            const duration = player.getDuration(); // Duração do áudio
+                
+            if (duration > 0) {
+                const progressPercent = (currentTime / duration) * 100; // Progresso em porcentagem
+                document.getElementById('progress').style.width = progressPercent + '%'; // Ajusta a largura da barra de progresso
+                    
+                document.getElementById('current-time').textContent = formatTime(currentTime); 
+                document.getElementById('duration').textContent = formatTime(duration);
+            }
+        }   
     </script>
 </body>
 </html>
