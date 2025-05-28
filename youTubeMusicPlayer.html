@@ -8,11 +8,16 @@
 </head>
 <body>
     <div class="player-container">
-        <div class="now-playing" id="now-playing">Selecione uma música</div>
+
+        <div id="player"></div> 
+
+        <div id="now-playing">
+            <h3>Escutar música</h3>
+        </div>
         
         <div class="progress-container">
-            <div class="progress-bar" id="progress-bar">
-                <div class="progress" id="progress"></div>
+            <div id="progress-bar">
+                <div id="progress"></div>
             </div>
             <div class="time-info">
                 <span id="current-time">0:00</span>
@@ -33,13 +38,25 @@
             <span>🔊</span>
         </div>
 
-        <ul class="playlist" id="playlist"></ul>
+        <ul class="playlist" id="playlist">
+            <li>
+                <h4>Les Jours Tristes - Yann Tiersen</h4>
+                <a href="https://www.youtube.com/watch?v=AA4deEZjnBA"></a>
+            </li>
+            <li>
+                <h4>Sunrise, Sunset - Bright Eyes</h4>
+                <a href="https://www.youtube.com/watch?v=1aSXYNt8udc"></a>
+            </li>
+            <li>
+                <h4>Elastic Heart - Sia</h4>
+                <a href="https://www.youtube.com/watch?v=KWZGAExj-es"></a>
+            </li>
+        </ul>
     </div>
     
-    <div id="player" style="display: none;"></div> *****************************************
-
+    
     <script>
-        let currentTrack = Math.floor(Math.random() * 3); // A primeira faixa a ser tocada é escolhida aleatoriamente
+        let currentTrack = ;
         let isPlaying = false; // Verifica se o player está tocando
         let progressInterval; // Progresso da música
         let currentVolume = 50; // Valor do volume
@@ -70,7 +87,7 @@
 
         // Quando API pronto
         window.onYouTubeIframeAPIReady = function() {
-            player = new youTube.Player('player', { // Cria um novo player com o ID 'player'
+            player = new YT.Player('player', { // Cria um novo player com o ID 'player'
                 height: '0',
                 width: '0', // Deixa o player invisível
                 playerVars: { // Parâmetros do player
@@ -133,6 +150,15 @@
         document.getElementById('next-btn').addEventListener('click', playNext);
         document.getElementById('prev-btn').addEventListener('click', playPrev);
 
+        document.getElementById('play-btn').addEventListener('click', () => {
+            if (currentTrack !== null) {
+                player.playVideo();
+            } else if (playlist.length > 0) {
+            // Se nenhuma música foi selecionada ainda, toca uma aleatória
+                playTrack(Math.floor(Math.random() * 3));
+            }
+        });
+
         // Toca a próxima faixa
         function playNext() {
             currentTrack = (currentTrack + 1) % playlist.length; // Se for a última vai para o início
@@ -169,7 +195,7 @@
         }
 
         // Toca uma faixa específica
-        function playTrack(index) {{
+        function playTrack(index) {
                 currentTrack = index;
                 const videoId = extractVideoId(playlist[index].url);
                 
@@ -180,7 +206,6 @@
                     document.getElementById('pause-btn').disabled = false;
                     updatePlaylist();
                 }
-            }
         }
 
         // Extrai o ID do vídeo da URL do YouTube
@@ -223,6 +248,9 @@
                 document.getElementById('duration').textContent = formatTime(duration);
             }
         }   
+
+    // Inicializa o player
+    loadYouTubePlayerAPI();
     </script>
 </body>
 </html>

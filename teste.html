@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Minimalist YouTube Music Player</title>
+<style>
+  /* Reset margin and padding */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  /* Full viewport, transparent background */
+  body, html {
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+  }
+
+  #player-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 30px;
+  }
+
+  button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  button:hover svg path,
+  button:hover .icon-fill {
+    fill: #000;
+    stroke: #000;
+  }
+
+  /* Play icon - SVG */
+  .play-icon {
+    width: 24px;
+    height: 24px;
+    fill: black;
+  }
+
+  /* Pause icon - SVG */
+  .pause-icon {
+    width: 24px;
+    height: 24px;
+    fill: black;
+  }
+
+  /* Forward icon - SVG */
+  .forward-icon {
+    width: 24px;
+    height: 24px;
+    fill: black;
+  }
+
+  /* Backward icon - SVG */
+  .backward-icon {
+    width: 24px;
+    height: 24px;
+    fill: black;
+  }
+
+  iframe {
+    display: none;
+  }
+</style>
+</head>
+<body>
+  <div id="player-container" aria-label="Music Player Controls">
+    <button id="prev" aria-label="Previous song" title="Anterior">
+      <svg class="backward-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M11 18V6l-8.5 6L11 18zM12 6v12l8.5-6L12 6z" fill="black" />
+      </svg>
+    </button>
+    <button id="play-pause" aria-label="Play/pause" title="Play/Pause">
+      <svg id="play-icon" class="play-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="display: block;">
+        <path d="M8 5v14l11-7z"></path>
+      </svg>
+      <svg id="pause-icon" class="pause-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="display: none;">
+        <rect x="6" y="5" width="4" height="14"></rect>
+        <rect x="14" y="5" width="4" height="14"></rect>
+      </svg>
+    </button>
+    <button id="next" aria-label="Next song" title="Próximo">
+      <svg class="forward-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M13 6v12l8.5-6L13 6zM12 6L3.5 12 12 18V6z" fill="black" />
+      </svg>
+    </button>
+  </div>
+
+  <div id="youtube-player"></div>
+
+<script>
+  // Playlist of YouTube Music links
+  const playlist = [
+    // Adicione aqui os links do YouTube Music
+    'https://music.youtube.com/watch?v=1aSXYNt8udc',    // Exemplo 1
+    'https://music.youtube.com/watch?v=dQw4w9WgXcQ',    // Exemplo 2
+    'https://music.youtube.com/watch?v=Zi_XLOBDo_Y'     // Exemplo 3
+  ];
+
+  // Extract YouTube video ID from given URL (supports youtube.com and music.youtube.com)
+  function getYouTubeVideoId(url) {
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes('youtube.com')) {
+        if (u.searchParams.has('v')) {
+          return u.searchParams.get('v');
+        } else if (u.pathname.startsWith('/shorts/')) {
+          return u.pathname.split('/')[2];
+        }
+      } else if (u.hostname === 'youtu.be') {
+        return u.pathname.slice(1);
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  let player;
+  let currentIndex = 0;
+  let isPlaying = false;
+
+  // Load YouTube iframe API
+  let tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  let firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+  function onYouTubeIframeAPIReady() {
+    player = new YT.Player('youtube-player', {
+      height: '0',
+      width: '0',
+      videoId: currentIndex,
+      playerVars: {
+        'autoplay': 0,
+        'controls': 0,
+        'rel': 0,
+        'modestbranding': 1,
+        'disablekb': 1,
+        'iv_load_policy': 3,
+        'fs': 0,
+        'cc_load_policy': 0,
+        'playsinline': 1
+      },
+      events: {
+        'onReady': onPlayerReady,
+        'onStateChange': onPlayerStateChange
+      }
+    });
+  }
+
+  function onPlayerReady(event) {
+    updateButtonPlayPause();
+  }
+
+  function onPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.ENDED) {
+      nextSong();
+    } else if (event.data === YT.PlayerState.PLAYING) {
+      isPlaying = true;
+      updateButtonPlayPause();
+    } else if (event.data === YT.PlayerState.PAUSED) {
+      isPlaying = false;
+      updateButtonPlayPause();
+    }
+  }
+
+  // Control functions
+  function playSong() {
+    if (player) {
+      player.playVideo();
+    }
+  }
+
+  function pauseSong() {
+    if (player) {
+      player.pauseVideo();
+    }
+  }
+
+  function loadSong(index) {
+    if (index < 0) {
+      index = playlist.length - 1;
+    } else if (index >= playlist.length) {
+      index = 0;
+    }
+    currentIndex = index;
+    const videoId = getYouTubeVideoId(playlist[currentIndex]);
+    player.loadVideoById(videoId);
+  }
+
+  function prevSong() {
+    loadSong(currentIndex - 1);
+  }
+
+  function nextSong() {
+    loadSong(currentIndex + 1);
+  }
+
+  // Update play/pause button icon
+  function updateButtonPlayPause() {
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+    if (isPlaying) {
+      playIcon.style.display = 'none';
+      pauseIcon.style.display = 'block';
+    } else {
+      playIcon.style.display = 'block';
+      pauseIcon.style.display = 'none';
+    }
+  }
+
+  // Button event listeners
+  document.getElementById('play-pause').addEventListener('click', () => {
+    if (!player) return;
+    if (isPlaying) {
+      pauseSong();
+    } else {
+      playSong();
+    }
+  });
+
+  document.getElementById('prev').addEventListener('click', () => {
+    if (!player) return;
+    prevSong();
+  });
+
+  document.getElementById('next').addEventListener('click', () => {
+    if (!player) return;
+    nextSong();
+  });
+</script>
+</body>
+</html>
+

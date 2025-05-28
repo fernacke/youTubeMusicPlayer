@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width", initial-scale="1.0">
+    <title>YouTube Music Player</title>
+    <link rel="stylesheet" href="estiloYTplayer.css">
+</head>
+<body>
+    <div id="player"></div> 
+
+    <div id="now-playing">
+        Escutar música
+    </div>
+        
+    <div class="controls">
+        <button id="prev-btn" disabled>⏮</button>
+        <button id="play-btn" disabled>▶</button>
+        <button id="pause-btn" disabled>⏸</button>
+        <button id="next-btn" disabled>⏭</button>
+    </div>
+
+    <div class="volume-control">
+        <span>🔈</span>
+        <input type="range" id="volume" min="0" max="100" value="50">
+        <span>🔊</span>
+    </div>
+
+        <ul id="playlist">
+            <li> Les Jours Tristes - Yann Tiersen</li>
+            <li>Sunrise, Sunset - Bright Eyes</li>
+            <li>Elastic Heart - Sia</li>
+        </ul>
+    </div>
+    <script src="scriptYTplayer.js"></script>
+</body>
+</html>
